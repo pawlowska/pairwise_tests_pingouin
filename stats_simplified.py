@@ -42,4 +42,4 @@ post_hocs = pg.pairwise_ttests(data=dane,
 post_hocs_interaction = post_hocs[post_hocs['Contrast'] == 'abbrev * group_label'].reset_index(drop=True)
 
 #%% saving
-export_csv = post_hocs_interaction.to_csv('pairwise'+input_data_file, header=True)
+export_csv = post_hocs_interaction.to_csv('pairwise_'+input_data_file, header=True)
