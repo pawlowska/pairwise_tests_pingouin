@@ -9,21 +9,25 @@ import pingouin as pg
 import pandas as pd
 
 #%% loading
-#dane = pd.read_csv('alcohol_depth5_remove0.csv')
-dane_lvl6 = pd.read_csv('alcohol_depth6_with_cat.csv')
+input_data_file='alcohol_depth5_cleaned.csv'
+dane = pd.read_csv(input_data_file)
 
 #%% cleanup. More than one value per group needed for calculating Standard Deviation
-dane=dane_lvl6
-counts=dane.groupby([ 'group_label', 'abbrev']).agg(['count'])
-counts.columns = ["_".join(x) for x in counts.columns.ravel()]
-to_remove=counts[counts['signal_density_count']<=1]
-to_remove.reset_index(inplace=True)
+counts=dane[[ 'group_label', 'abbrev', 'signal_density']].groupby([ 'group_label', 'abbrev']).count().reset_index()
+dane=dane[~dane.abbrev.isin(counts[counts['signal_density']<=1]['abbrev'].to_list())]
 
-dane=dane[~dane.abbrev.isin(to_remove['abbrev'].to_list())]
+#%% anova to check whether significant differences exist
+aov = pg.mixed_anova(data=dane, 
+                     dv='signal_density', 
+                     between='group_label',
+                     within='abbrev', 
+                     subject='case_id', 
+                     correction=True)
+print(aov[['Source','DF1','DF2','p-unc']])
 
 #%% pairwise t tests
 #see https://pingouin-stats.org/generated/pingouin.pairwise_ttests.html#pingouin.pairwise_ttests
-post_hocs_2sided_6 = pg.pairwise_ttests(data=dane, 
+post_hocs = pg.pairwise_ttests(data=dane, 
                                       dv='signal_density',
                                       within='abbrev', 
                                       between='group_label',
@@ -35,8 +39,7 @@ post_hocs_2sided_6 = pg.pairwise_ttests(data=dane,
                                       effsize='cohen',
                                       return_desc=True)
 
-post_hocs_2_6 = post_hocs_2sided_6[post_hocs_2sided_6['Contrast'] == 'abbrev * group_label'].reset_index(drop=True)
+post_hocs_interaction = post_hocs[post_hocs['Contrast'] == 'abbrev * group_label'].reset_index(drop=True)
 
 #%% saving
-
-export_csv = post_hocs_2_6.to_csv('pairwise_2sided_depth6.csv', header=True)
+export_csv = post_hocs_interaction.to_csv('pairwise'+input_data_file, header=True)
