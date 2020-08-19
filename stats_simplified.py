@@ -14,7 +14,9 @@ dane = pd.read_csv(input_data_file)
 
 #%% cleanup. More than one value per group needed for calculating Standard Deviation
 counts=dane[[ 'group_label', 'abbrev', 'signal_density']].groupby([ 'group_label', 'abbrev']).count().reset_index()
-dane=dane[~dane.abbrev.isin(counts[counts['signal_density']<=1]['abbrev'].to_list())]
+dane=dane[dane.abbrev.isin(counts[counts['signal_density']>1]['abbrev'].to_list())]
+print('brain structures left: '+str(len(pd.unique(dane['abbrev']))))
+
 
 #%% anova to check whether significant differences exist
 aov = pg.mixed_anova(data=dane, 
